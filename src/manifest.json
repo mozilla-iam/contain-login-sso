@@ -1,0 +1,37 @@
+{
+    "manifest_version": 2,
+    "name": "SSO Login Container",
+    "version": "1.0.0",
+
+    "description": "SSO Login Container isolates your work sessions by containerizing pages where your SSO login was detected",
+
+    "icons": {
+        "48": "icon.png",
+        "96": "icon@2x.png"
+    },
+
+    "applications": {
+      "gecko": {
+        "id": "@contain-login-sso",
+        "strict_min_version": "57.0"
+      }
+    },
+
+    "homepage_url": "https://github.com/mozilla/contain-login-sso",
+
+    "permissions": [
+        "<all_urls>",
+        "browsingData",
+        "contextualIdentities",
+        "cookies",
+        "management",
+        "storage",
+        "tabs",
+        "webRequestBlocking",
+        "webRequest"
+    ],
+
+    "background": {
+        "scripts": ["background.js"]
+    }
+}
