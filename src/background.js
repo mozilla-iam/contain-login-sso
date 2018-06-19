@@ -101,37 +101,35 @@ async function detectSSO (options) {
   }
 
   if ((options.url.endsWith(SSO_LDAP_LOGIN_URL)) && (options.method === "POST")) {
-    console.log(options);
     if (tab.cookieStoreId !== SSOCookieStoreId) {
       // Get them SSO cookies and transfer them to our container
-      let parsedUrl = new URL(options.url);
-      // e.g. "auth0.com"
-      let domainAndTld = parsedUrl.hostname.split('.').slice(2).join('.');
-      const SSOCookies = await browser.cookies.getAll({domain: domainAndTld});
-      for (let cookie of SSOCookies) {
-        console.log("Moving cookie "+cookie.name+" to container");
-        browser.cookies.set({storeId: SSOCookieStoreId, name: cookie.name, path: cookie.path,
-          secure: cookie.secure, url: "https://"+cookie.domain+"/", value: cookie.value, httpOnly: cookie.httpOnly,
-          firstPartyDomain: cookie.firstPartyDomain, expirationDate: cookie.expirationDate});
-        browser.cookies.remove({storeId: FIREFOX_DEFAULT_COOKIE_STORE, url: "https://"+cookie.domain+"/", name: cookie.name})
-      }
+      moveDomainCookiesToStore(FIREFOX_DEFAULT_COOKIE_STORE, SSOCookieStoreId, options.url);
 
       // Get them original RP cookies and do the same
       let parsedOriginUrl = new URL(options.originUrl);
       let rpUrl = parsedOriginUrl.searchParams.get('redirect_uri');
-      let parsedRpUrl = new URL(rpUrl);
-      let rpDomainAndTld = parsedRpUrl.hostname.split('.').slice(2).join('.');
-      const RPCookies = await browser.cookies.getAll({domain: rpDomainAndTld});
-      for (let cookie of RPCookies) {
-        console.log("Moving RP cookie "+cookie.name+" to container");
-        browser.cookies.set({storeId: SSOCookieStoreId, name: cookie.name, path: cookie.path,
-          secure: cookie.secure, url: "https://"+cookie.domain+"/", value: cookie.value, httpOnly: cookie.httpOnly,
-          firstPartyDomain: cookie.firstPartyDomain, expirationDate: cookie.expirationDate});
-        browser.cookies.remove({storeId: FIREFOX_DEFAULT_COOKIE_STORE, url: "https://"+cookie.domain+"/", name: cookie.name})
-      }
+      moveDomainCookiesToStore(FIREFOX_DEFAULT_COOKIE_STORE, SSOCookieStoreId, rpUrl);
 
       return containUrl(SSOCookieStoreId, tab, options, options.originUrl);
     }
+  }
+}
+
+async function moveDomainCookiesToStore(fromStoreId, toStoreId, url) {
+  // Copies cookies in fromStoreid to toStoreId then deletes them from fromStoreId
+  let parsedUrl = new URL(url);
+  // Get TLD + first domain
+  let domainAndTld = parsedUrl.hostname.split('.').slice(2).join('.');
+
+  const cookies = await browser.cookies.getAll({domain: domainAndTld});
+
+  for (let cookie of cookies) {
+    console.log("Moving cookie "+cookie.name+" from "+fromStoreId+" to "+toStoreId);
+    // note that we do not set cookie.domain - i.e. all cookies are host-only cookies.
+    browser.cookies.set({storeId: toStoreId, name: cookie.name, path: cookie.path,
+      secure: cookie.secure, url: "https://"+cookie.domain+"/", value: cookie.value, httpOnly: cookie.httpOnly,
+      firstPartyDomain: cookie.firstPartyDomain, expirationDate: cookie.expirationDate});
+    browser.cookies.remove({storeId: fromStoreId, url: "https://"+cookie.domain+"/", name: cookie.name})
   }
 }
 
@@ -155,7 +153,6 @@ async function validUrlToDetectOrContain(options) {
 
 // Contains a URL into our container
 async function containUrl(cookieStoreId, tab, options, url) {
-  console.log('intercepted: '+url);
   // Called from listener callbacks
   if (shouldCancelEarly(tab, options)) {
     // We need to cancel early to prevent multiple reopenings
