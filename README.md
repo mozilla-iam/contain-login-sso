@@ -23,3 +23,6 @@ Any time you login from your default container, you will be redirected to the co
 - Enable add-on debugging if you want to
 - Click "Load temporary add-on" and select the `manifest.json` file
 - You can also remove or reload or debug the add-on from here.
+
+
+See <https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API> for a reference.
