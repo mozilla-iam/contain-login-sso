@@ -194,7 +194,7 @@ async function tabRemoved(tabId, removeInfo) {
   const cookies = await browser.cookies.getAll({storeId: SSOCookieStoreId});
   console.log(cookies);
   for (let cookie of cookies) {
-    console.log(cookie);
+    // Removes both http and https as the RP may have created more cookies on http
     browser.cookies.remove({storeId: SSOCookieStoreId, url:"http://"+cookie.domain, name:cookie.name});
     browser.cookies.remove({storeId: SSOCookieStoreId, url:"https://"+cookie.domain, name:cookie.name});
     console.log("Removed cookie "+cookie.name+" from "+cookie.storeId);
